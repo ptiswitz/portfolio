@@ -1,0 +1,738 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+
+::-webkit-scrollbar {
+    width: 12px; /* Width of the vertical scrollbar */
+    height: 12px; /* Height of the horizontal scrollbar */
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a; /* Dark background, similar to input fields */
+    border-radius: 10px; /* Optional: Rounded track */
+    border: 2px solid #0a0a0a; /* Border matching body background for inset look */
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #4a148c; /* Main theme purple */
+    border-radius: 10px;
+    border: 2px solid #000; /* Pixel-style border */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: #7b1fa2; /* Lighter purple on hover */
+}
+
+::-webkit-scrollbar-corner {
+    background: #0a0a0a; /* Background of the corner where vertical and horizontal scrollbars meet */
+}
+
+/* Custom Scrollbars - Firefox */
+/* Apply to elements that will have scrollbars */
+html, body, .info-content, .character-card-front, .character-card-back, textarea.form-control {
+    scrollbar-width: thin; /* "auto" or "thin" */
+    scrollbar-color: #4a148c #1a1a1a; /* thumb-color track-color */
+}
+
+/* Optional: For Firefox, to give a slightly more "pixelated" feel if desired,
+    you might be limited. The above is the primary way.
+    If you want more control like WebKit, you'd rely on browser defaults or
+    more complex JS solutions (which are generally overkill for just scrollbars).
+*/
+
+/* Ensure these specific elements get the Firefox styling if they might scroll */
+.info-content,
+.character-card-front,
+.character-card-back,
+textarea.form-control {
+    scrollbar-width: thin;
+    scrollbar-color: #4a148c #1a1a1a; /* thumb color, track color */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0a0a0a;
+    color: #f5f5f5;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    image-rendering: pixelated;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23111111' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Retro Scanlines Effect */
+.scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+    to bottom,
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.25) 50%
+    );
+    background-size: 100% 4px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0.15;
+}
+
+/* CRT Screen Effect */
+.crt {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+    ellipse at center,
+    rgba(10, 10, 10, 0) 0%,
+    rgba(10, 10, 10, 0.2) 80%,
+    rgba(10, 10, 10, 0.6) 100%
+    );
+    z-index: 999;
+    pointer-events: none;
+}
+
+/* Character Card Container */
+.character-card {
+    width: 100%;
+    max-width: 800px;
+    background-color: #121212;
+    border: 4px solid #4a148c;
+    box-shadow: 
+    0 0 0 4px #000,
+    0 0 20px rgba(138, 43, 226, 0.6),
+    inset 0 0 20px rgba(138, 43, 226, 0.4);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    margin: 40px auto;
+    transform-style: preserve-3d;
+    transition: transform 0.8s ease;
+}
+
+.character-card-inner {
+    width: 100%;
+    height: 70vh;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+}
+
+.character-card.flipped .character-card-inner {
+    transform: rotateY(180deg);
+}
+
+.character-card-front, .character-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    background-color: #121212;
+    overflow-y: auto;
+}
+
+.character-card-back {
+    transform: rotateY(180deg);
+    padding: 20px;
+}
+
+/* Card Header */
+.card-header {
+    background: linear-gradient(to right, #4a148c, #7b1fa2);
+    padding: 15px;
+    text-align: center;
+    border-bottom: 2px solid #000;
+    position: relative;
+}
+
+.card-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 24px;
+    color: #fff;
+    text-shadow: 
+    3px 3px 0 #000,
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.card-subtitle {
+    color: #ffeb3b;
+    font-size: 18px;
+}
+
+/* Character Stats Section */
+.character-content {
+    display: flex;
+    padding: 20px;
+}
+
+.character-avatar {
+    flex: 0 0 200px;
+    margin-right: 20px;
+    position: relative;
+}
+
+.pixel-art-frame {
+    border: 3px solid #4a148c;
+    padding: 8px;
+    background-color: #000;
+    display: flex; /* For centering the pixel-character div */
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-img { /* Not used for JS sprite, but good to have */
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    display: block;
+}
+
+/* Pixel Art Character */
+.pixel-character { /* This is #character-sprite */
+height: 200px; /* Original height */
+width: 100%;   /* Fill the .pixel-art-frame's content width */
+/* max-width: 180px; /* You might adjust this based on your SVG's natural aspect ratio
+                        or let the SVG's preserveAspectRatio handle it.
+                        Given your SVG has viewBox="0 0 200 200" (square),
+                        if height is 200px, width will also try to be 200px,
+                        respecting parent constraints. */
+background-color: transparent;
+position: relative;
+display: flex; /* Helps center if SVG doesn't fill due to aspect ratio mismatch */
+align-items: center;
+justify-content: center;
+}
+
+/* Stats Container */
+.character-stats {
+    flex: 1;
+}
+
+.stat-group {
+    margin-bottom: 15px;
+}
+
+.stat-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    color: #9c27b0;
+    margin-bottom: 8px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.stat-bar {
+    background-color: #2c2c2c;
+    height: 16px;
+    border: 2px solid #000;
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.stat-fill {
+    height: 100%;
+    background: linear-gradient(to right, #4a148c, #9c27b0);
+    position: relative;
+}
+
+.stat-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 14px;
+    text-shadow: 1px 1px 0 #000;
+    z-index: 1;
+}
+
+.stat-name {
+    display: flex;
+    justify-content: space-between;
+}
+
+.stat-name span:last-child {
+    color: #ffeb3b;
+}
+
+/* Character Info */
+.character-info {
+    padding: 0 20px 20px;
+}
+
+.info-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 16px;
+    color: #9c27b0;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.info-content {
+    background-color: #1a1a1a;
+    border: 2px solid #4a148c;
+    border-radius: 5px;
+    padding: 15px;
+    font-size: 18px;
+    color: #ccc;
+}
+
+/* Skills Section */
+.character-skills {
+    padding: 0 20px 20px;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.skill-item {
+    background-color: #1a1a1a;
+    border: 2px solid #4a148c;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.skill-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+}
+
+.skill-icon {
+    font-size: 28px;
+    color: #9c27b0;
+    margin-bottom: 5px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.skill-name {
+    color: #fff;
+    font-size: 16px;
+}
+
+/* Projects/Quests Section */
+.character-quests {
+    padding: 20px;
+}
+
+.quest-item {
+    background-color: #1a1a1a;
+    border: 2px solid #4a148c;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.quest-title {
+    color: #ffeb3b;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.quest-description {
+    color: #ccc;
+    margin-bottom: 10px;
+}
+
+.quest-rewards {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap; /* Allow tags to wrap */
+}
+
+.reward-tag {
+    background-color: #4a148c;
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.quest-status {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background-color: #4caf50;
+    color: #000;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.quest-status.active-quest {
+    background-color: #ffeb3b;
+    color: #000;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 0 20px 20px;
+}
+
+.action-btn {
+    background-color: #4a148c;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    border: 2px solid #000;
+    box-shadow: 0 4px 0 #000;
+    transition: all 0.1s ease;
+    text-decoration: none;
+}
+
+.action-btn:hover {
+    background-color: #7b1fa2;
+}
+
+.action-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #000;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+    color: #666;
+    margin-top: auto;
+}
+
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.social-link {
+    color: #9c27b0;
+    font-size: 24px;
+    transition: all 0.3s ease;
+}
+
+.social-link:hover {
+    color: #7b1fa2;
+    transform: scale(1.2);
+}
+
+/* Navigation */
+.nav-buttons {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+.nav-btn {
+    background-color: #4a148c;
+    color: #fff;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-size: 18px;
+    border: 2px solid #000;
+    box-shadow: 0 4px 0 #000;
+}
+
+.nav-btn:hover {
+    background-color: #7b1fa2;
+}
+
+/* Back Side of Card */
+.contact-form {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-label {
+    display: block;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    color: #9c27b0;
+    margin-bottom: 5px;
+}
+
+.form-control {
+    width: 100%;
+    background-color: #1a1a1a;
+    border: 2px solid #4a148c;
+    padding: 10px;
+    color: #fff;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    border-radius: 5px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #9c27b0;
+    box-shadow: 0 0 5px rgba(156, 39, 176, 0.5);
+}
+
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* Level Progress */
+.level-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.level-indicator {
+    background-color: #ffeb3b;
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+}
+
+.exp-bar {
+    flex: 1;
+    height: 10px;
+    background-color: #2c2c2c;
+    border: 2px solid #000;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.exp-fill {
+    height: 100%;
+    background: linear-gradient(to right, #ffeb3b, #ffc107);
+    width: 75%; /* Example EXP */
+}
+
+/* Pixel Art Elements */
+.pixel-item { /* Generic class, not used but good for concept */
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: #9c27b0;
+}
+
+.pixel-health-potion {
+    /* Original positioning from your CSS */
+    top: 10px;
+    right: 10px;
+    position: absolute;
+    /* Now it's a container, size will be determined by its content (heart + count) */
+    width: auto;
+    height: auto;
+    background-color: transparent; /* Container is transparent */
+    border: none; /* Remove old potion border */
+    border-radius: 0; /* Remove old potion border-radius */
+    z-index: 10; /* Ensure it's above other elements if needed */
+    display: flex; /* To help position count if needed, or just use absolute */
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Remove the old ::before styling for the potion cork */
+.pixel-health-potion::before {
+    content: none !important; /* Override previous styles */
+}
+
+/* --- New styles for the heart and count --- */
+.heart-art-container {
+    display: grid;
+    position: relative;
+    gap: 1px; /* Creates the grid lines between pixels */
+    image-rendering: pixelated; /* Hint for browsers */
+}
+
+.heart-art-container .heart-pixel {
+    background-color: #f44336; /* Bright red for heart pixels */
+}
+/* Empty grid cells (where there's no heart-pixel) will show the heart-art-container's background-color */
+
+.health-count {
+    color: #fff; /* White text */
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    text-shadow: 1px 1px 0 #000; /* Black text shadow for readability */
+    margin-top: 3px; /* Space between heart and count */
+    padding: 1px 4px;
+    border-radius: 2px;
+    line-height: 1; /* Adjust for tight fit */
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .character-content {
+    flex-direction: column;
+    }
+    
+    .character-avatar {
+    margin-right: 0;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 250px; /* Increased for better centering */
+    margin: 0 auto 20px;
+    }
+    
+    .skills-grid {
+    grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .card-title {
+    font-size: 20px;
+    }
+    .character-card-back {
+    max-height: 70vh; /* Adjust for smaller screens */
+    }
+}
+
+@media (max-width: 576px) {
+    .skills-grid {
+    grid-template-columns: 1fr;
+    }
+    
+    .character-card {
+    margin: 20px auto;
+    }
+    
+    .card-title {
+    font-size: 16px;
+    }
+    
+    .card-subtitle {
+    font-size: 14px;
+    }
+}
+
+/* Animation for text blinking effect */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.blinking-text {
+    animation: blink 1.5s infinite;
+}
+
+/* Press Space prompt */
+.press-space {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    color: #fff;
+    text-align: center;
+    padding: 10px 15px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 2px solid #4a148c;
+    border-radius: 5px;
+    z-index: 1001; /* Above scanlines/crt */
+    display: none; /* Initially hidden, shown by JS */
+}
+
+/* Animation for floating */
+@keyframes float {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0); }
+}
+
+.float-animation {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Preloader */
+.preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-text {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 20px;
+}
+
+.loading-bar {
+    width: 300px;
+    height: 20px;
+    background-color: #1a1a1a;
+    border: 2px solid #4a148c;
+    position: relative;
+    border-radius: 3px;
+    overflow: hidden; /* Ensure progress fill stays within bounds */
+}
+
+.loading-progress {
+    height: 100%;
+    background: linear-gradient(to right, #4a148c, #9c27b0);
+    width: 0%;
+    transition: width 0.1s linear; /* Smoother progress update */
+}
+
+/* Pixel art character bobbing animation */
+@keyframes spriteBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); } /* Subtle bob */
+}
+.bobbing { /* Apply this class to the SVG element or #character-sprite */
+    animation: spriteBob 2s ease-in-out infinite;
+}
