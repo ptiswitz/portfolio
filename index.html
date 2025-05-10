@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Julien The Codeweaver</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+
+    ::-webkit-scrollbar {
+      width: 12px; /* Width of the vertical scrollbar */
+      height: 12px; /* Height of the horizontal scrollbar */
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #1a1a1a; /* Dark background, similar to input fields */
+      border-radius: 10px; /* Optional: Rounded track */
+      border: 2px solid #0a0a0a; /* Border matching body background for inset look */
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #4a148c; /* Main theme purple */
+      border-radius: 10px;
+      border: 2px solid #000; /* Pixel-style border */
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #7b1fa2; /* Lighter purple on hover */
+    }
+
+    ::-webkit-scrollbar-corner {
+      background: #0a0a0a; /* Background of the corner where vertical and horizontal scrollbars meet */
+    }
+
+    /* Custom Scrollbars - Firefox */
+    /* Apply to elements that will have scrollbars */
+    html, body, .info-content, .character-card-front, .character-card-back, textarea.form-control {
+      scrollbar-width: thin; /* "auto" or "thin" */
+      scrollbar-color: #4a148c #1a1a1a; /* thumb-color track-color */
+    }
+
+    /* Optional: For Firefox, to give a slightly more "pixelated" feel if desired,
+      you might be limited. The above is the primary way.
+      If you want more control like WebKit, you'd rely on browser defaults or
+      more complex JS solutions (which are generally overkill for just scrollbars).
+    */
+
+    /* Ensure these specific elements get the Firefox styling if they might scroll */
+    .info-content,
+    .character-card-front,
+    .character-card-back,
+    textarea.form-control {
+      scrollbar-width: thin;
+      scrollbar-color: #4a148c #1a1a1a; /* thumb color, track color */
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background-color: #0a0a0a;
+      color: #f5f5f5;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      image-rendering: pixelated;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23111111' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Retro Scanlines Effect */
+    .scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.25) 50%
+      );
+      background-size: 100% 4px;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.15;
+    }
+    
+    /* CRT Screen Effect */
+    .crt {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(10, 10, 10, 0) 0%,
+        rgba(10, 10, 10, 0.2) 80%,
+        rgba(10, 10, 10, 0.6) 100%
+      );
+      z-index: 999;
+      pointer-events: none;
+    }
+    
+    /* Character Card Container */
+    .character-card {
+      width: 100%;
+      max-width: 800px;
+      background-color: #121212;
+      border: 4px solid #4a148c;
+      box-shadow: 
+        0 0 0 4px #000,
+        0 0 20px rgba(138, 43, 226, 0.6),
+        inset 0 0 20px rgba(138, 43, 226, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      margin: 40px auto;
+      transform-style: preserve-3d;
+      transition: transform 0.8s ease;
+    }
+    
+    .character-card-inner {
+      width: 100%;
+      height: 70vh;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+    }
+    
+    .character-card.flipped .character-card-inner {
+      transform: rotateY(180deg);
+    }
+    
+    .character-card-front, .character-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      background-color: #121212;
+      overflow-y: auto;
+    }
+    
+    .character-card-back {
+      transform: rotateY(180deg);
+      padding: 20px;
+    }
+    
+    /* Card Header */
+    .card-header {
+      background: linear-gradient(to right, #4a148c, #7b1fa2);
+      padding: 15px;
+      text-align: center;
+      border-bottom: 2px solid #000;
+      position: relative;
+    }
+    
+    .card-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 24px;
+      color: #fff;
+      text-shadow: 
+        3px 3px 0 #000,
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+    
+    .card-subtitle {
+      color: #ffeb3b;
+      font-size: 18px;
+    }
+    
+    /* Character Stats Section */
+    .character-content {
+      display: flex;
+      padding: 20px;
+    }
+    
+    .character-avatar {
+      flex: 0 0 200px;
+      margin-right: 20px;
+      position: relative;
+    }
+    
+    .pixel-art-frame {
+      border: 3px solid #4a148c;
+      padding: 8px;
+      background-color: #000;
+      display: flex; /* For centering the pixel-character div */
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .avatar-img { /* Not used for JS sprite, but good to have */
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+      display: block;
+    }
+    
+    /* Pixel Art Character */
+    .pixel-character { /* This is #character-sprite */
+    height: 200px; /* Original height */
+    width: 100%;   /* Fill the .pixel-art-frame's content width */
+    /* max-width: 180px; /* You might adjust this based on your SVG's natural aspect ratio
+                            or let the SVG's preserveAspectRatio handle it.
+                            Given your SVG has viewBox="0 0 200 200" (square),
+                            if height is 200px, width will also try to be 200px,
+                            respecting parent constraints. */
+    background-color: transparent;
+    position: relative;
+    display: flex; /* Helps center if SVG doesn't fill due to aspect ratio mismatch */
+    align-items: center;
+    justify-content: center;
+  }
+    
+    /* Stats Container */
+    .character-stats {
+      flex: 1;
+    }
+    
+    .stat-group {
+      margin-bottom: 15px;
+    }
+    
+    .stat-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      color: #9c27b0;
+      margin-bottom: 8px;
+      text-shadow: 1px 1px 0 #000;
+    }
+    
+    .stat-bar {
+      background-color: #2c2c2c;
+      height: 16px;
+      border: 2px solid #000;
+      position: relative;
+      margin-bottom: 5px;
+    }
+    
+    .stat-fill {
+      height: 100%;
+      background: linear-gradient(to right, #4a148c, #9c27b0);
+      position: relative;
+    }
+    
+    .stat-value {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 14px;
+      text-shadow: 1px 1px 0 #000;
+      z-index: 1;
+    }
+    
+    .stat-name {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .stat-name span:last-child {
+      color: #ffeb3b;
+    }
+    
+    /* Character Info */
+    .character-info {
+      padding: 0 20px 20px;
+    }
+    
+    .info-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 16px;
+      color: #9c27b0;
+      margin-bottom: 10px;
+      text-shadow: 1px 1px 0 #000;
+    }
+    
+    .info-content {
+      background-color: #1a1a1a;
+      border: 2px solid #4a148c;
+      border-radius: 5px;
+      padding: 15px;
+      font-size: 18px;
+      color: #ccc;
+    }
+    
+    /* Skills Section */
+    .character-skills {
+      padding: 0 20px 20px;
+    }
+    
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    
+    .skill-item {
+      background-color: #1a1a1a;
+      border: 2px solid #4a148c;
+      padding: 10px;
+      text-align: center;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+    
+    .skill-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+    
+    .skill-icon {
+      font-size: 28px;
+      color: #9c27b0;
+      margin-bottom: 5px;
+      text-shadow: 1px 1px 0 #000;
+    }
+    
+    .skill-name {
+      color: #fff;
+      font-size: 16px;
+    }
+    
+    /* Projects/Quests Section */
+    .character-quests {
+      padding: 20px;
+    }
+    
+    .quest-item {
+      background-color: #1a1a1a;
+      border: 2px solid #4a148c;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 15px;
+      position: relative;
+    }
+    
+    .quest-title {
+      color: #ffeb3b;
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    
+    .quest-description {
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+    
+    .quest-rewards {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap; /* Allow tags to wrap */
+    }
+    
+    .reward-tag {
+      background-color: #4a148c;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+    
+    .quest-status {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background-color: #4caf50;
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .quest-status.active-quest {
+      background-color: #ffeb3b;
+      color: #000;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      padding: 0 20px 20px;
+    }
+    
+    .action-btn {
+      background-color: #4a148c;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: 2px solid #000;
+      box-shadow: 0 4px 0 #000;
+      transition: all 0.1s ease;
+      text-decoration: none;
+    }
+    
+    .action-btn:hover {
+      background-color: #7b1fa2;
+    }
+    
+    .action-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 #000;
+    }
+    
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 16px;
+      color: #666;
+      margin-top: auto;
+    }
+    
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .social-link {
+      color: #9c27b0;
+      font-size: 24px;
+      transition: all 0.3s ease;
+    }
+    
+    .social-link:hover {
+      color: #7b1fa2;
+      transform: scale(1.2);
+    }
+    
+    /* Navigation */
+    .nav-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+    
+    .nav-btn {
+      background-color: #4a148c;
+      color: #fff;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-bottom: 10px;
+      font-size: 18px;
+      border: 2px solid #000;
+      box-shadow: 0 4px 0 #000;
+    }
+    
+    .nav-btn:hover {
+      background-color: #7b1fa2;
+    }
+    
+    /* Back Side of Card */
+    .contact-form {
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-label {
+      display: block;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      color: #9c27b0;
+      margin-bottom: 5px;
+    }
+    
+    .form-control {
+      width: 100%;
+      background-color: #1a1a1a;
+      border: 2px solid #4a148c;
+      padding: 10px;
+      color: #fff;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      border-radius: 5px;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: #9c27b0;
+      box-shadow: 0 0 5px rgba(156, 39, 176, 0.5);
+    }
+    
+    textarea.form-control {
+      min-height: 120px;
+      resize: vertical;
+    }
+    
+    /* Level Progress */
+    .level-progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .level-indicator {
+      background-color: #ffeb3b;
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+    }
+    
+    .exp-bar {
+      flex: 1;
+      height: 10px;
+      background-color: #2c2c2c;
+      border: 2px solid #000;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .exp-fill {
+      height: 100%;
+      background: linear-gradient(to right, #ffeb3b, #ffc107);
+      width: 75%; /* Example EXP */
+    }
+    
+    /* Pixel Art Elements */
+    .pixel-item { /* Generic class, not used but good for concept */
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background-color: #9c27b0;
+    }
+    
+    .pixel-health-potion {
+      /* Original positioning from your CSS */
+      top: 10px;
+      right: 10px;
+      position: absolute;
+      /* Now it's a container, size will be determined by its content (heart + count) */
+      width: auto;
+      height: auto;
+      background-color: transparent; /* Container is transparent */
+      border: none; /* Remove old potion border */
+      border-radius: 0; /* Remove old potion border-radius */
+      z-index: 10; /* Ensure it's above other elements if needed */
+      display: flex; /* To help position count if needed, or just use absolute */
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Remove the old ::before styling for the potion cork */
+    .pixel-health-potion::before {
+      content: none !important; /* Override previous styles */
+    }
+
+    /* --- New styles for the heart and count --- */
+    .heart-art-container {
+      display: grid;
+      position: relative;
+      gap: 1px; /* Creates the grid lines between pixels */
+      image-rendering: pixelated; /* Hint for browsers */
+    }
+
+    .heart-art-container .heart-pixel {
+      background-color: #f44336; /* Bright red for heart pixels */
+    }
+    /* Empty grid cells (where there's no heart-pixel) will show the heart-art-container's background-color */
+
+    .health-count {
+      color: #fff; /* White text */
+      font-family: 'Press Start 2P', cursive;
+      font-size: 10px;
+      text-shadow: 1px 1px 0 #000; /* Black text shadow for readability */
+      margin-top: 3px; /* Space between heart and count */
+      padding: 1px 4px;
+      border-radius: 2px;
+      line-height: 1; /* Adjust for tight fit */
+    }
+    
+    /* Media Queries */
+    @media (max-width: 768px) {
+      .character-content {
+        flex-direction: column;
+      }
+      
+      .character-avatar {
+        margin-right: 0;
+        margin-bottom: 20px;
+        width: 100%;
+        max-width: 250px; /* Increased for better centering */
+        margin: 0 auto 20px;
+      }
+      
+      .skills-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .card-title {
+        font-size: 20px;
+      }
+      .character-card-back {
+        max-height: 70vh; /* Adjust for smaller screens */
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .skills-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .character-card {
+        margin: 20px auto;
+      }
+      
+      .card-title {
+        font-size: 16px;
+      }
+      
+      .card-subtitle {
+        font-size: 14px;
+      }
+    }
+    
+    /* Animation for text blinking effect */
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    
+    .blinking-text {
+      animation: blink 1.5s infinite;
+    }
+    
+    /* Press Space prompt */
+    .press-space {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      color: #fff;
+      text-align: center;
+      padding: 10px 15px;
+      background-color: rgba(0, 0, 0, 0.8);
+      border: 2px solid #4a148c;
+      border-radius: 5px;
+      z-index: 1001; /* Above scanlines/crt */
+      display: none; /* Initially hidden, shown by JS */
+    }
+    
+    /* Animation for floating */
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0); }
+    }
+    
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    /* Preloader */
+    .preloader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    
+    .loading-text {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 24px;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    
+    .loading-bar {
+      width: 300px;
+      height: 20px;
+      background-color: #1a1a1a;
+      border: 2px solid #4a148c;
+      position: relative;
+      border-radius: 3px;
+      overflow: hidden; /* Ensure progress fill stays within bounds */
+    }
+    
+    .loading-progress {
+      height: 100%;
+      background: linear-gradient(to right, #4a148c, #9c27b0);
+      width: 0%;
+      transition: width 0.1s linear; /* Smoother progress update */
+    }
+
+    /* Pixel art character bobbing animation */
+    @keyframes spriteBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); } /* Subtle bob */
+    }
+    .bobbing { /* Apply this class to the SVG element or #character-sprite */
+      animation: spriteBob 2s ease-in-out infinite;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Preloader -->
+  <div class="preloader">
+    <div class="loading-text">LOADING...</div>
+    <div class="loading-bar">
+      <div class="loading-progress"></div>
+    </div>
+  </div>
+
+  <!-- CRT Effects -->
+  <div class="scanlines"></div>
+  <div class="crt"></div>
+  
+  <!-- Press Space Prompt -->
+  <div class="press-space blinking-text">PRESS SPACE OR CLICK TO CONTINUE</div>
+  
+  <!-- Nav Buttons -->
+  <div class="nav-buttons">
+    <button class="nav-btn flip-card" aria-label="Flip Card">
+      <i class="fas fa-sync-alt"></i>
+    </button>
+  </div>
+  
+  <div class="container">
+    <div class="character-card">
+      <div class="character-card-inner">
+        <!-- Front of Card -->
+        <div class="character-card-front">
+          <div class="card-header">
+            <h1 class="card-title">JULIEN THE CODEWEAVER</h1>
+            <div class="level-progress">
+              <span class="level-indicator">LVL 39</span>
+              <div class="exp-bar">
+                <div class="exp-fill"></div>
+              </div>
+            </div>
+            <p class="card-subtitle">Master Frontend Developer</p>
+          </div>
+          
+          <div class="character-content">
+            <div class="character-avatar">
+              <div class="pixel-art-frame">
+                <div class="pixel-character" id="character-sprite">
+                  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" style="image-rendering: pixelated;">
+                    
+                    <!-- Wizard Hat -->
+                    <rect x="90" y="40" width="20" height="10" fill="#394C89" shape-rendering="crispEdges"/>
+                    <rect x="80" y="50" width="40" height="10" fill="#394C89" shape-rendering="crispEdges"/>
+                    <rect x="70" y="60" width="60" height="10" fill="#394C89" shape-rendering="crispEdges"/>
+                    <rect x="80" y="45" width="10" height="5" fill="#5B699C" shape-rendering="crispEdges"/>
+                    <rect x="90" y="35" width="10" height="5" fill="#5B699C" shape-rendering="crispEdges"/>
+                    <rect x="100" y="45" width="10" height="5" fill="#5B699C" shape-rendering="crispEdges"/>
+                    <rect x="70" y="55" width="10" height="5" fill="#5B699C" shape-rendering="crispEdges"/>
+                    <rect x="110" y="55" width="10" height="5" fill="#5B699C" shape-rendering="crispEdges"/>
+                    
+                    <!-- Face -->
+                    <rect x="85" y="70" width="30" height="20" fill="#F4C7A7" shape-rendering="crispEdges"/>
+                    
+                    <!-- Eyes -->
+                    <rect x="90" y="75" width="5" height="5" fill="#000000" shape-rendering="crispEdges"/>
+                    <rect x="105" y="75" width="5" height="5" fill="#000000" shape-rendering="crispEdges"/>
+                    
+                    <!-- Beard -->
+                    <rect x="85" y="90" width="30" height="20" fill="#FFFFFF" shape-rendering="crispEdges"/>
+                    <rect x="85" y="110" width="5" height="5" fill="#FFFFFF" shape-rendering="crispEdges"/>
+                    <rect x="110" y="110" width="5" height="5" fill="#FFFFFF" shape-rendering="crispEdges"/>
+                    <rect x="90" y="115" width="20" height="5" fill="#FFFFFF" shape-rendering="crispEdges"/>
+                    
+                    <!-- Robe Body -->
+                    <rect x="80" y="90" width="40" height="50" fill="#394C89" shape-rendering="crispEdges"/>
+                    <rect x="70" y="100" width="10" height="30" fill="#394C89" shape-rendering="crispEdges"/>
+                    <rect x="120" y="100" width="10" height="30" fill="#394C89" shape-rendering="crispEdges"/>
+                    <rect x="75" y="130" width="50" height="10" fill="#394C89" shape-rendering="crispEdges"/>
+                    <rect x="80" y="140" width="40" height="10" fill="#394C89" shape-rendering="crispEdges"/>
+                    
+                    <!-- Robe Highlights -->
+                    <rect x="85" y="100" width="5" height="20" fill="#5B699C" shape-rendering="crispEdges"/>
+                    <rect x="110" y="100" width="5" height="20" fill="#5B699C" shape-rendering="crispEdges"/>
+                    <rect x="95" y="120" width="10" height="10" fill="#5B699C" shape-rendering="crispEdges"/>
+                    
+                    <!-- Wizard Staff -->
+                    <rect x="60" y="70" width="5" height="70" fill="#8B4513" shape-rendering="crispEdges"/>
+                    <rect x="55" y="65" width="15" height="5" fill="#8B4513" shape-rendering="crispEdges"/>
+                    <rect x="60" y="60" width="5" height="5" fill="#8B4513" shape-rendering="crispEdges"/>
+                    <rect x="55" y="55" width="15" height="5" fill="#FF3030" shape-rendering="crispEdges"/>
+                    <rect x="60" y="50" width="5" height="5" fill="#FF3030" shape-rendering="crispEdges"/>
+                    
+                    <!-- Feet -->
+                    <rect x="85" y="150" width="10" height="5" fill="#291D10" shape-rendering="crispEdges"/>
+                    <rect x="105" y="150" width="10" height="5" fill="#291D10" shape-rendering="crispEdges"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <!-- Pixel Art Decorations -->
+              <div class="pixel-health-potion" id="health-potion-display"></div>
+            </div>
+            
+            <div class="character-stats">
+              <div class="stat-group">
+                <h3 class="stat-title">ATTRIBUTES</h3> <!-- Changed title slightly for emphasis -->
+
+                <div class="stat-name">
+                  <span>JavaScript (ESNext+)</span>
+                  <span>98/100</span>
+                </div>
+                <div class="stat-bar">
+                  <div class="stat-fill" style="width: 98%"></div>
+                  <div class="stat-value">98%</div>
+                </div>
+
+                <div class="stat-name">
+                  <span>Angular (Expert)</span>
+                  <span>97/100</span>
+                </div>
+                <div class="stat-bar">
+                  <div class="stat-fill" style="width: 97%"></div>
+                  <div class="stat-value">97%</div>
+                </div>
+
+                <div class="stat-name">
+                  <span>Vue.js & Components</span>
+                  <span>92/100</span> <!-- Adjusted score slightly to reflect current strong focus -->
+                </div>
+                <div class="stat-bar">
+                  <div class="stat-fill" style="width: 92%"></div>
+                  <div class="stat-value">92%</div>
+                </div>
+
+                <div class="stat-name">
+                  <span>Frontend Architecture & Lead</span>
+                  <span>95/100</span> <!-- High score for this crucial senior skill -->
+                </div>
+                <div class="stat-bar">
+                  <div class="stat-fill" style="width: 95%"></div>
+                  <div class="stat-value">95%</div>
+                </div>
+                
+                <div class="stat-name">
+                  <span>TypeScript</span>
+                  <span>95/100</span>
+                </div>
+                <div class="stat-bar">
+                  <div class="stat-fill" style="width: 95%"></div>
+                  <div class="stat-value">95%</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          
+          <div class="character-info">
+            <h3 class="info-title">CHARACTER LORE</h3>
+            <div class="info-content">
+              Forged in the early fires of web development, Julien the Codeweaver's path has been one of continuous mastery. Early trials saw him standardizing frontend runes before venturing as a Code-Sage across varied guilds, honing JavaScript and architectural acumen. His expertise grew, transmuting legacy Java systems with Angular, and later architecting an AI platform's frontend at Ubisoft. Now a Senior Vanguard at Nurun, Julien leads a frontend fellowship for an automotive titan, mentoring mages in Vue.js & StencilJS and refining powerful digital engines. A seasoned sorcerer, Julien transforms complex challenges into elegant, performant web experiences.
+            </div>
+          </div>
+          
+          <div class="character-skills">
+            <h3 class="info-title">SPECIAL ABILITIES</h3>
+            <div class="skills-grid">
+              <div class="skill-item">
+                <div class="skill-icon">
+                  <i class="fas fa-dragon"></i> 
+                </div>
+                <div class="skill-name">Legacy Code Tamer</div>
+              </div>
+              <div class="skill-item">
+                <div class="skill-icon">
+                  <i class="fas fa-layer-group"></i> <!-- CORRECTED ICON for Component Architect -->
+                </div>
+                <div class="skill-name">Component Architect</div>
+              </div>
+              <div class="skill-item">
+                <div class="skill-icon">
+                  <i class="fas fa-gauge-high"></i> 
+                </div>
+                <div class="skill-name">Performance Optimizer</div>
+              </div>
+              <div class="skill-item">
+                <div class="skill-icon">
+                  <i class="fas fa-users-gear"></i> 
+                </div>
+                <div class="skill-name">Agile Vanguard</div>
+              </div>
+              <div class="skill-item">
+                <div class="skill-icon">
+                  <i class="fas fa-chalkboard-user"></i> 
+                </div>
+                <div class="skill-name">Junior Dev Mentor</div>
+              </div>
+              <div class="skill-item">
+                <div class="skill-icon">
+                  <i class="fas fa-flask"></i> <!-- CORRECTED ICON for Cross-Functional Alchemist -->
+                </div>
+                <div class="skill-name">Cross-Functional Alchemist</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <a href="#" class="action-btn">HIRE HERO</a>
+            <button class="action-btn flip-card">CHARACTER INFO</button>
+          </div>
+        </div>
+        
+        <!-- Back of Card -->
+        <div class="character-card-back">
+          <div class="card-header">
+            <h2 class="card-title">COMPLETED QUESTS</h2>
+            <p class="card-subtitle">Portfolio of Adventures</p>
+          </div>
+          
+          <div class="character-quests">
+
+            <!-- Quest 1: Nurun -->
+            <div class="quest-item">
+              <h3 class="quest-title">The Automotive Vanguard's Command</h3>
+              <div class="quest-status active-quest">ACTIVE</div> <!-- Or COMPLETED if you want to list past roles as completed -->
+              <p class="quest-description">Leading a fellowship of frontend developers for an automotive titan. Responsibilities include code arbitration, mystical user story estimations, and stewardship of ancient codebases. Forged new paths in templating to hasten development cycles.</p>
+              <div class="quest-rewards">
+                <span class="reward-tag">Team Lead</span>
+                <span class="reward-tag">Vue.js</span>
+                <span class="reward-tag">StencilJS</span>
+                <span class="reward-tag">Code Review</span>
+                <span class="reward-tag">Mentorship</span>
+                <span class="reward-tag">Angular</span>
+                <span class="reward-tag">Jenkins</span>
+                <span class="reward-tag">Apache Sling</span>
+              </div>
+            </div>
+
+            <!-- Quest 2: Ubisoft Montréal -->
+            <div class="quest-item">
+              <h3 class="quest-title">The Sorcerer's AI Forge</h3>
+              <div class="quest-status">COMPLETED</div>
+              <p class="quest-description">Forged a Machine Learning production platform for the Grand Mages at Ubisoft. Charted the course for a new web application, architecting an Angular-powered grimoire and a potent BFF API.</p>
+              <div class="quest-rewards">
+                <span class="reward-tag">Angular</span>
+                <span class="reward-tag">REST API</span>
+                <span class="reward-tag">BFF Architecture</span>
+                <span class="reward-tag">Machine Learning Platform</span>
+                <span class="reward-tag">Docker</span>
+                <span class="reward-tag">CI/CD</span>
+                <span class="reward-tag">TypeScript</span>
+              </div>
+            </div>
+
+            <!-- Quest 3: Digital Shape Technologies -->
+            <div class="quest-item">
+              <h3 class="quest-title">The Alchemist's Financial Transmutation</h3>
+              <div class="quest-status">COMPLETED</div>
+              <p class="quest-description">Commanded all web enchantments, transmuting an ancient Java-based financial ledger into a modern web marvel using JAX-RS and Angular. Automated the flow of golden data with Pythonic scripts and robust workflows.</p>
+              <div class="quest-rewards">
+                <span class="reward-tag">Angular</span>
+                <span class="reward-tag">JAX-RS</span>
+                <span class="reward-tag">Python</span>
+                <span class="reward-tag">Data Automation</span>
+                <span class="reward-tag">Full-stack</span>
+                <span class="reward-tag">CI/CD</span>
+              </div>
+            </div>
+
+            <!-- Quest 4: SFEIR -->
+            <div class="quest-item">
+              <h3 class="quest-title">The Angular Scroll Mastery</h3>
+              <div class="quest-status">COMPLETED</div>
+              <p class="quest-description">Honed mastery over Angular and its Material incantations, crafting powerful frontend experiences and user interfaces.</p>
+              <div class="quest-rewards">
+                <span class="reward-tag">Angular</span>
+                <span class="reward-tag">Angular Material</span>
+                <span class="reward-tag">TypeScript</span>
+                <span class="reward-tag">Frontend Dev</span>
+              </div>
+            </div>
+
+            <!-- Quest 5: Degetel (Multiple Missions) -->
+            <div class="quest-item">
+              <h3 class="quest-title">The Wandering Code-Sage's Chronicles</h3>
+              <div class="quest-status">COMPLETED</div>
+              <p class="quest-description">Embarked on diverse missions as a travelling frontend sorcerer.
+                <br><strong>France Televisions:</strong> Wove backend and frontend spells for a grand media portal, including a Wordpress blog kingdom and potent Javascript components.
+                <br><strong>Bouygues Telecom:</strong> Fortified a hybrid SDK, banishing bugs and brewing new features for mobile enchantments.
+                <br><strong>Invities:</strong> Architected a cross-device frontend, automating its deployment across mystical set-top boxes and browsers.
+              </p>
+              <div class="quest-rewards">
+                <span class="reward-tag">Javascript</span>
+                <span class="reward-tag">AngularJS</span>
+                <span class="reward-tag">PHP</span>
+                <span class="reward-tag">Wordpress</span>
+                <span class="reward-tag">SDK Development</span>
+                <span class="reward-tag">Frontend Architecture</span>
+                <span class="reward-tag">Consulting</span>
+              </div>
+            </div>
+
+            <!-- Quest 6: ADFAB -->
+            <div class="quest-item">
+              <h3 class="quest-title">The Industrialization of Frontend Runes</h3>
+              <div class="quest-status">COMPLETED</div>
+              <p class="quest-description">Pioneered the standardization of frontend development within the guild. Scribed coding edicts, enriched the sacred Wiki, and introduced the 960 Grid System to harmonize creation and implementation. Championed Agile (Scrum) rituals.</p>
+              <div class="quest-rewards">
+                <span class="reward-tag">Frontend Standards</span>
+                <span class="reward-tag">Process Improvement</span>
+                <span class="reward-tag">HTML/CSS</span>
+                <span class="reward-tag">jQuery/Mootools</span>
+                <span class="reward-tag">PHP</span>
+                <span class="reward-tag">Agile/Scrum</span>
+                <span class="reward-tag">Actionscript</span>
+              </div>
+            </div>
+
+            <!-- Quest 7: Orange Business (Apprenticeship) -->
+            <div class="quest-item">
+              <h3 class="quest-title">The Apprentice's Reporting Scryglass</h3>
+              <div class="quest-status">COMPLETED</div>
+              <p class="quest-description">As an apprentice, crafted a PHP-based reporting tool for the sales force, divining insights from raw data. This marked the first steps on the path of code wizardry.</p>
+              <div class="quest-rewards">
+                <span class="reward-tag">PHP</span>
+                <span class="reward-tag">MySQL</span>
+                <span class="reward-tag">HTML/CSS</span>
+                <span class="reward-tag">Apprenticeship</span>
+              </div>
+            </div>
+
+          </div>
+          
+          <div class="contact-form">
+            <h3 class="info-title">SEND A RAVEN</h3>
+            <!-- Replace YOUR_FORM_ID with the ID Formspree gives you -->
+            <form id="contactForm" action="https://formspree.io/f/xqaqlyvg" method="POST">
+              <div class="form-group">
+                <label for="senderName" class="form-label">YOUR NAME</label>
+                <!-- Add name attribute, important for form submission -->
+                <input type="text" id="senderName" name="name" class="form-control" placeholder="Enter your name" required>
+              </div>
+              <div class="form-group">
+                <label for="senderEmail" class="form-label">YOUR SCROLL (EMAIL)</label>
+                <!-- Add name attribute -->
+                <input type="email" id="senderEmail" name="_replyto" class="form-control" placeholder="you@example.com" required>
+              </div>
+              <div class="form-group">
+                <label for="messageContent" class="form-label">YOUR MESSAGE</label>
+                <!-- Add name attribute -->
+                <textarea id="messageContent" name="message" class="form-control" placeholder="Write your message here..." required></textarea>
+              </div>
+              
+              <input type="hidden" name="_subject" value="New Portfolio Contact from Julien The Codeweaver's Site!">
+
+              <!-- Optional: Honeypot for basic spam protection -->
+              <input type="text" name="_gotcha" style="display:none">
+
+              <div class="action-buttons">
+                <!-- The button type="submit" is already correct from previous suggestions -->
+                <button type="submit" class="action-btn">SEND MESSAGE</button>
+                <button type="button" class="action-btn flip-card">BACK TO STATS</button> <!-- Ensure this is type="button" -->
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>&copy; 2025 • Julien The Codeweaver • All Rights Reserved</p>
+      <div class="social-links">
+        <a href="https://github.com/ptiswitz/" class="social-link" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/legerjulien/" class="social-link" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- SELECTORS ---
+      const preloader = document.querySelector('.preloader');
+      const loadingProgress = document.querySelector('.loading-progress');
+      const pressSpacePrompt = document.querySelector('.press-space');
+      const characterCard = document.querySelector('.character-card');
+      const flipButtons = document.querySelectorAll('.flip-card');
+      const characterSpriteContainer = document.getElementById('character-sprite');
+
+function drawPixelHeartWithCount() {
+  const healthPotionContainer = document.getElementById('health-potion-display');
+  if (!healthPotionContainer) return;
+
+  healthPotionContainer.innerHTML = ''; // Clear any previous content
+
+  // Pixel art data for the heart (1 = filled pixel, 0 = empty)
+  const heartMatrix = [
+    [0, 1, 0, 1, 0],
+    [1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 0],
+    [0, 0, 1, 0, 0]
+  ];
+
+  const pixelSize = 5; // Size of each "pixel" in CSS pixels
+  const heartRows = heartMatrix.length;
+  const heartCols = heartMatrix[0].length;
+  const gapSize = 1; // Must match the 'gap' in .heart-art-container CSS
+
+  // Create the heart drawing area
+  const heartArtDiv = document.createElement('div');
+  heartArtDiv.className = 'heart-art-container';
+  heartArtDiv.style.gridTemplateColumns = `repeat(${heartCols}, ${pixelSize}px)`;
+  heartArtDiv.style.gridTemplateRows = `repeat(${heartRows}, ${pixelSize}px)`;
+
+  // Calculate width and height including gaps (but not the outer box-shadow border)
+  heartArtDiv.style.width = `${(heartCols * pixelSize) + ((heartCols - 1) * gapSize)}px`;
+  heartArtDiv.style.height = `${(heartRows * pixelSize) + ((heartRows - 1) * gapSize)}px`;
+
+  // Populate the grid with heart pixels
+  heartMatrix.forEach(row => {
+    row.forEach(cell => {
+      const pixelDiv = document.createElement('div');
+      if (cell === 1) {
+        pixelDiv.className = 'heart-pixel';
+      }
+      // If cell is 0, it's an empty div, will show container's background (gap color)
+      heartArtDiv.appendChild(pixelDiv);
+    });
+  });
+
+  // Create the count display
+  const countDiv = document.createElement('div');
+  countDiv.className = 'health-count';
+  countDiv.textContent = '3';
+
+  // Append to the main container
+  healthPotionContainer.appendChild(heartArtDiv);
+  healthPotionContainer.appendChild(countDiv);
+}
+
+      
+      function handlePreloader() {
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 2; // Slower, more "realistic" loading
+          if (progress > 100) progress = 100;
+          loadingProgress.style.width = `${progress}%`;
+
+          if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => {
+              if (preloader) preloader.style.display = 'none';
+              if (pressSpacePrompt) pressSpacePrompt.style.display = 'block';
+              initInteraction();
+              drawPixelHeartWithCount(); // Draw heart with count
+            }, 500); // Give a moment for 100% to show
+          }
+        }, 30); // Adjust interval for speed
+      }
+
+      function initInteraction() {
+        const startHandler = (event) => {
+          // Check if the click is not on a button/link inside the card already
+          let target = event.target;
+          let isInteractiveElement = false;
+          while(target && target !== document.body) {
+            if (target.tagName === 'BUTTON' || target.tagName === 'A' || target.classList.contains('form-control')) {
+              // If the preloader isn't dismissed yet, and we click an interactive element,
+              // we still want to dismiss the prompt. But after that, let the element do its job.
+              if (pressSpacePrompt && pressSpacePrompt.style.display !== 'none') {
+                 // continue to dismiss logic
+              } else {
+                isInteractiveElement = true; // It's an active element, don't block its default action by only dismissing prompt
+                break;
+              }
+            }
+            target = target.parentNode;
+          }
+
+
+          if (event.type === 'click' || (event.type === 'keydown' && event.code === 'Space')) {
+             if (pressSpacePrompt && pressSpacePrompt.style.display !== 'none') {
+                pressSpacePrompt.style.display = 'none';
+                if (characterCard) {
+                  characterCard.classList.add('float-animation');
+                  characterCard.classList.add('displayed'); // Ensure card is not flipped
+                  characterSpriteContainer.classList.add('bobbing'); // Add bobbing animation
+                }
+                
+                // Remove listeners only after the first interaction that dismisses the prompt
+                document.removeEventListener('click', startHandler);
+                document.removeEventListener('keydown', startHandler);
+             } else if (event.type === 'keydown' && event.code === 'Space' && !isInteractiveElement) {
+                // Allow space to flip card if not typing in a form field.
+                const activeEl = document.activeElement;
+                if (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA') {
+                   if (characterCard) characterCard.classList.toggle('flipped');
+                }
+             }
+          }
+        };
+        document.addEventListener('click', startHandler);
+        document.addEventListener('keydown', startHandler);
+      }
+
+      function setupCardFlip() {
+        if (characterCard && flipButtons.length > 0) {
+          flipButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+              e.stopPropagation(); // Prevent triggering document click listener if prompt is still up
+              characterCard.classList.toggle('flipped');
+            });
+          });
+        }
+      }
+
+      // --- INITIALIZATION ---
+      handlePreloader();
+      setupCardFlip();
+      // Pixel art and float animation are triggered after preloader / "press space".
+    });
+  </script>
+</body>
+</html>
